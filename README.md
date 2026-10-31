@@ -14,10 +14,28 @@ wer hat welche Mail geöffnet, wer kümmert sich, was ist erledigt.
 - **Handy-App** (PWA) mit Push-Mitteilungen – ohne App Store
 - Alles in einer SQLite-Datei, Postfach-Passwörter AES-256-GCM-verschlüsselt
 
-## Schnellstart mit Docker
+## Installation mit einem Befehl (Ubuntu/Debian-Server)
+
+Voraussetzung: ein Server mit Ubuntu oder Debian, eine Domain (z. B. `mail.firma.de`), deren DNS-Eintrag (A-Record) schon auf den Server zeigt, und offene Ports 80 und 443.
 
 ```bash
-git clone <repo-url> teampost && cd teampost
+curl -fsSL https://raw.githubusercontent.com/aCasper18/teampost/main/install.sh | sudo bash
+```
+
+Das Skript fragt nach Domain, E-Mail und App-Name, installiert Docker, startet Teampost und richtet HTTPS automatisch ein (Caddy + Let's Encrypt). Danach `https://<domain>` öffnen und den ersten Admin anlegen.
+
+Ohne Rückfragen:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aCasper18/teampost/main/install.sh | sudo DOMAIN=mail.firma.de EMAIL=it@firma.de APP_NAME="Firma Mail" bash
+```
+
+**Update**: denselben Befehl erneut ausführen – Einstellungen (`/opt/teampost/.env`) und Daten bleiben erhalten.
+
+## Schnellstart mit Docker (ohne HTTPS)
+
+```bash
+git clone https://github.com/aCasper18/teampost.git && cd teampost
 cp .env.example .env        # optional: Name, Farbe, Port anpassen
 docker compose up -d
 ```
