@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/app/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/app/icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Einrichten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap">
+<style>
+  :root{--ink:#111318;--muted:#6B7280;--line:#D9DCE1;--canvas:#FAFAFB;--brand:#2563EB;--bad:#B42323;color-scheme:light}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:var(--canvas);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:16px}
+  form{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px rgba(16,24,40,.06);padding:28px;width:min(100%,360px)}
+  .kopf{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .kopf img{width:40px;height:40px;object-fit:contain}
+  h1{font-size:18px;font-weight:800}
+  p{font-size:12px;color:var(--muted)}
+  label{display:block;font-size:12px;font-weight:600;margin:12px 0 4px}
+  input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:15px inherit;color:var(--ink);background:#fff}
+  input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+  button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:10px;background:var(--ink);color:#fff;font:700 15px inherit;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  .fehler{color:var(--bad);font-size:13px;min-height:18px;margin-top:10px}
+</style>
+</head>
+<body>
+<form id="f">
+  <div class="kopf"><img src="/app/icon.svg" alt=""><div><h1>Willkommen bei <span data-app-name>Teampost</span></h1><p>Ersten Admin-Zugang anlegen</p></div></div>
+  <label for="name">Dein Name</label>
+  <input id="name" type="text" autocomplete="name" required autofocus>
+  <label for="email">E-Mail (zum Anmelden)</label>
+  <input id="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+  <label for="password">Passwort (mind. 8 Zeichen)</label>
+  <input id="password" type="password" autocomplete="new-password" minlength="8" required>
+  <button type="submit" id="los">Einrichten & anmelden</button>
+  <div class="fehler" id="fehler" role="alert"></div>
+</form>
+<script src="/js/marke.js"></script>
+<script>
+// Nur beim allerersten Start erreichbar – danach leitet der Server auf /login um
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const los = document.getElementById('los');
+  los.disabled = true;
+  try {
+    const r = await fetch('/api/einrichten', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: document.getElementById('name').value, email: document.getElementById('email').value, password: document.getElementById('password').value }) });
+    if (r.ok) return location.replace('/mail');
+    document.getElementById('fehler').textContent = (await r.json()).error || 'Einrichten fehlgeschlagen';
+  } catch {
+    document.getElementById('fehler').textContent = 'Keine Verbindung zum Server';
+  }
+  los.disabled = false;
+});
+</script>
+</body>
+</html>

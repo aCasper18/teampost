@@ -1,0 +1,26 @@
+{
+  "name": "teampost",
+  "version": "1.0.0",
+  "description": "Gemeinsame Postfächer fürs Team – IMAP/SMTP, Zuweisen, Notizen, Labels, Vorlagen, Push. Selbst gehostet.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "nutzer": "node scripts/nutzer.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.22.3",
+    "imapflow": "^2.2.5",
+    "jsonwebtoken": "^9.0.3",
+    "mailparser": "^3.9.36",
+    "nodemailer": "^10.0.14",
+    "socket.io": "^4.8.4",
+    "web-push": "^3.6.7"
+  }
+}

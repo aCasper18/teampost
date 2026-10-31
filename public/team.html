@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/app/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Team</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* Team verwalten (nur Admins): Logins anlegen, Rolle und Name ändern, Passwort zurücksetzen, sperren/entsperren.
+   Welche Postfächer jemand sieht, wird in der Mail-App je Postfach unter „Rechte“ vergeben. */
+:root{--ink:#111318;--muted:#6B7280;--line:#E8EAEE;--line2:#D9DCE1;--bg:#F4F5F7;--card:#fff;--brand:#2563EB;--on-brand:#fff;--bad:#B42323;color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:16px;font-weight:800}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+.karte{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.karte h2{font-size:14px;font-weight:800;margin-bottom:4px}
+.hinweis{font-size:12.5px;color:var(--muted)}
+form.neu{display:grid;grid-template-columns:1fr 1fr 1fr 120px auto;gap:8px;align-items:end;margin-top:12px}
+label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:10px;font:14px inherit;color:var(--ink);background:#fff}
+input:focus,select:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+button{border:0;border-radius:10px;padding:9px 14px;font:700 13px inherit;cursor:pointer;background:var(--ink);color:#fff;white-space:nowrap}
+button.hell{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+button.rot{background:#fff;color:var(--bad);border:1px solid #F3C7C7}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:700;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+td small{display:block;color:var(--muted);font-size:12px}
+tr.aus td{opacity:.5}
+.rolle{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#EEF0F3}
+.rolle.admin{background:color-mix(in srgb,var(--brand) 14%,#fff);color:color-mix(in srgb,var(--brand) 65%,#000)}
+.aktionen{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.meldung{font-size:13px;min-height:18px;margin-top:8px}
+.meldung.fehler{color:var(--bad)}
+@media (max-width:760px){form.neu{grid-template-columns:1fr}th:nth-child(3),td:nth-child(3){display:none}}
+</style>
+</head>
+<body>
+<header><div id="konto"></div><h1>Team verwalten</h1></header>
+<main>
+  <section class="karte">
+    <h2>Login hinzufügen</h2>
+    <p class="hinweis">Jede Person meldet sich mit ihrer E-Mail und dem Passwort an, das du hier vergibst (sie kann es danach selbst ändern). Welche Postfächer sie sieht, legst du in der Mail-App beim Postfach unter „Rechte“ fest.</p>
+    <form class="neu" id="neu">
+      <div><label for="nName">Name</label><input id="nName" required></div>
+      <div><label for="nMail">E-Mail</label><input id="nMail" type="email" required autocomplete="off"></div>
+      <div><label for="nPw">Start-Passwort</label><input id="nPw" type="text" minlength="8" required autocomplete="off"></div>
+      <div><label for="nRolle">Rolle</label><select id="nRolle"><option value="nutzer">Nutzer</option><option value="admin">Admin</option></select></div>
+      <button type="submit">Anlegen</button>
+    </form>
+    <div class="meldung" id="meldung" role="status"></div>
+  </section>
+  <section class="karte">
+    <h2>Logins</h2>
+    <p class="hinweis"><b>Admin</b>: sieht alle Postfächer und verwaltet das Team. <b>Nutzer</b>: sieht nur eigene und freigegebene Postfächer.</p>
+    <table><thead><tr><th>Person</th><th>Rolle</th><th>Seit</th><th></th></tr></thead><tbody id="liste"></tbody></table>
+  </section>
+</main>
+<script src="/js/marke.js"></script>
+<script src="/js/konto.js"></script>
+<script>
+(() => {
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let ich = null;
+let liste = [];
+const melden = (text, fehler = false) => { $('meldung').textContent = text; $('meldung').className = `meldung${fehler ? ' fehler' : ''}`; };
+async function api(method, url, body) {
+  const r = await fetch(`/api/team${url}`, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.fehler || 'Fehler');
+  return d;
+}
+function zeichnen() {
+  $('liste').innerHTML = liste.map((n) => `<tr class="${n.aktiv ? '' : 'aus'}" data-email="${esc(n.email)}">
+    <td><b>${esc(n.name || n.email)}</b><small>${esc(n.email)}${n.aktiv ? '' : ' · gesperrt'}</small></td>
+    <td><span class="rolle ${n.rolle}">${n.rolle === 'admin' ? 'Admin' : 'Nutzer'}</span></td>
+    <td>${new Date(n.erstellt.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE')}</td>
+    <td><div class="aktionen">${n.email === ich.sub ? '<span class="hinweis">das bist du</span>' : `
+      <button class="hell" data-rolle>${n.rolle === 'admin' ? 'Zu Nutzer' : 'Zu Admin'}</button>
+      <button class="hell" data-pw>Passwort</button>
+      <button class="${n.aktiv ? 'rot' : 'hell'}" data-aktiv>${n.aktiv ? 'Sperren' : 'Entsperren'}</button>`}</div></td></tr>`).join('');
+}
+async function laden() { liste = (await api('GET', '')).nutzer; zeichnen(); }
+
+$('neu').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('nMail').value.trim().toLowerCase();
+  if (liste.some((n) => n.email === email)) return melden('Diese E-Mail hat schon einen Login.', true);
+  try {
+    await api('POST', '', { name: $('nName').value, email, passwort: $('nPw').value, rolle: $('nRolle').value });
+    e.target.reset(); melden(`${email} angelegt ✓`); laden();
+  } catch (x) { melden(x.message, true); }
+});
+$('liste').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const n = liste.find((x) => x.email === b.closest('tr').dataset.email);
+  try {
+    if (b.dataset.rolle != null) await api('POST', '', { email: n.email, name: n.name, rolle: n.rolle === 'admin' ? 'nutzer' : 'admin' });
+    if (b.dataset.pw != null) {
+      const pw = prompt(`Neues Passwort für ${n.name || n.email} (mind. 8 Zeichen):`);
+      if (!pw) return;
+      await api('POST', '', { email: n.email, name: n.name, rolle: n.rolle, passwort: pw });
+      melden(`Passwort für ${n.email} geändert ✓`);
+    }
+    if (b.dataset.aktiv != null) {
+      if (n.aktiv && !confirm(`${n.name || n.email} sperren? Der Login funktioniert dann sofort nicht mehr.`)) return;
+      await api('PUT', `/${encodeURIComponent(n.email)}/aktiv`, { aktiv: !n.aktiv });
+    }
+    laden();
+  } catch (x) { melden(x.message, true); }
+});
+window.kontoMenue('konto').then((s) => { if (s) { ich = s; laden().catch((x) => melden(x.message, true)); } });
+})();
+</script>
+</body>
+</html>
