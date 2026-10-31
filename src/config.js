@@ -18,9 +18,10 @@ if (!env.JWT_SECRET?.trim()) {
   env.JWT_SECRET = readFileSync(GEHEIM_DATEI, 'utf8').trim();
 }
 
+const farbe = `#${String(env.APP_FARBE || '').trim().replace(/^#/, '')}`;
 export const APP = {
   name: env.APP_NAME || 'Teampost',
-  farbe: /^#[0-9a-f]{6}$/i.test(env.APP_FARBE || '') ? env.APP_FARBE : '#2563EB',
+  farbe: /^#[0-9a-f]{6}$/i.test(farbe) ? farbe : '#2563EB',
   port: Number(env.PORT || 3000),
   host: env.HOST || '0.0.0.0',
   // hinter HTTPS (Reverse-Proxy) auf true setzen → Cookie nur über HTTPS; ohne HTTPS (lokal, im LAN) aus lassen

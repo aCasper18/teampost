@@ -1,0 +1,20 @@
+# Zusatz für HTTPS mit Caddy (automatische Let's-Encrypt-Zertifikate). Wird von install.sh genutzt:
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-daten:/data
+      - caddy-config:/config
+    depends_on:
+      - teampost
+
+volumes:
+  caddy-daten:
+  caddy-config:

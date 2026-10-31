@@ -3,10 +3,13 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # TEAMPOST_BIND=127.0.0.1 → nur über den Reverse-Proxy erreichbar
+      - "${TEAMPOST_BIND:-0.0.0.0}:${PORT:-3000}:3000"
     env_file:
       - path: .env
         required: false
+    environment:
+      PORT: 3000
     volumes:
       - teampost-daten:/data
 
